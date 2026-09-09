@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'request_page.dart';
+
 class MenuPage extends StatelessWidget {
   const MenuPage({super.key});
 
@@ -18,25 +20,55 @@ class MenuPage extends StatelessWidget {
         children: [
           Card(
             child: ListTile(
-              title: Text('Evidências'),
-              subtitle: Text('Chitãozinho & Xororó'),
-              trailing: Text('R\$ 10'),
+              title: const Text('Evidências'),
+              subtitle: const Text('Chitãozinho & Xororó'),
+              trailing: const Text('R\$ 10'),
+
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        const RequestPage(songName: 'Evidências'),
+                  ),
+                );
+              },
             ),
           ),
 
           Card(
             child: ListTile(
-              title: Text('Tempo Perdido'),
-              subtitle: Text('Legião Urbana'),
-              trailing: Text('R\$ 20'),
+              title: const Text('Tempo Perdido'),
+              subtitle: const Text('Legião Urbana'),
+              trailing: const Text('R\$ 20'),
+
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        const RequestPage(songName: 'Tempo Perdido'),
+                  ),
+                );
+              },
             ),
           ),
 
           Card(
             child: ListTile(
-              title: Text('Sinônimos'),
-              subtitle: Text('Chitãozinho & Xororó'),
-              trailing: Text('R\$ 15'),
+              title: const Text('Sinônimos'),
+              subtitle: const Text('Chitãozinho & Xororó'),
+              trailing: const Text('R\$ 15'),
+
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        const RequestPage(songName: 'Sinônimos'),
+                  ),
+                );
+              },
             ),
           ),
         ],
