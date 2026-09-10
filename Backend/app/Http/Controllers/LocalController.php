@@ -7,79 +7,76 @@ use Illuminate\Http\Request;
 
 class LocalController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function index()
     {
-        //
+        return response()->json(Local::all(), 200);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+
     public function create()
     {
-        //
+        
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+    
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'nome' => 'required|string|max:255',
+            'endereco' => 'nullable|string|max:255',
+            'complemento' => 'nullable|string|max:255',
+            'bairro' => 'nullable|string|max:255',
+            'cidade' => 'nullable|string|max:255',
+            'estado' => 'nullable|string|max:2',
+            'cep' => 'nullable|string|max:10',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+        ]);
+
+        $local = Local::create($validated);
+
+        return response()->json($local, 201);
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\Local  $local
-     * @return \Illuminate\Http\Response
-     */
+    
     public function show(Local $local)
     {
-        //
+        return response()->json($local, 200);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Local  $local
-     * @return \Illuminate\Http\Response
-     */
+   
     public function edit(Local $local)
     {
-        //
+        
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Local  $local
-     * @return \Illuminate\Http\Response
-     */
+    
     public function update(Request $request, Local $local)
     {
-        //
+        $validated = $request->validate([
+            'nome' => 'sometimes|required|string|max:255',
+            'endereco' => 'nullable|string|max:255',
+            'complemento' => 'nullable|string|max:255',
+            'bairro' => 'nullable|string|max:255',
+            'cidade' => 'nullable|string|max:255',
+            'estado' => 'nullable|string|max:2',
+            'cep' => 'nullable|string|max:10',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+        ]);
+
+        $local->update($validated);
+
+        return response()->json($local, 200);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\Local  $local
-     * @return \Illuminate\Http\Response
-     */
+
     public function destroy(Local $local)
     {
-        //
+        $local->delete();
+
+        return response()->json([
+            'message' => 'Local removido com sucesso.'
+        ], 200);
     }
 }
