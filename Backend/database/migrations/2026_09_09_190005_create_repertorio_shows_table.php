@@ -15,6 +15,22 @@ class CreateRepertorioShowsTable extends Migration
     {
         Schema::create('repertorio_shows', function (Blueprint $table) {
             $table->id();
+
+            $table->foreignId('show_id')
+                  ->constrained('shows')
+                  ->cascadeOnDelete()
+                  ->cascadeOnUpdate();
+
+            $table->foreignId('musica_id')
+                  ->constrained('musicas')
+                  ->cascadeOnDelete()
+                  ->cascadeOnUpdate();
+
+            $table->decimal('valor_minimo', 10, 2)->nullable(); 
+            $table->boolean('esta_disponivel')->default(true);
+            $table->integer('ordem')->default(0);
+
+            
             $table->timestamps();
         });
     }
