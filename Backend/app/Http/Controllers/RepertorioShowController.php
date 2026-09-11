@@ -7,79 +7,76 @@ use Illuminate\Http\Request;
 
 class RepertorioShowController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function index()
     {
-        //
+        return response()->json(
+            RepertorioShow::with([
+                'show',
+                'musica'
+            ])->get(),
+            200
+        );
     }
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function create()
     {
         //
     }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
-        //
-    }
+        $validated = $request->validate([
+            'show_id' => 'required|exists:shows,id',
+            'musica_id' => 'required|exists:musicas,id',
+            'valor_minimo' => 'required|numeric|min:0',
+            'esta_disponivel' => 'boolean',
+            'ordem' => 'nullable|integer|min:0',
+        ]);
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\RepertorioShow  $repertorioShow
-     * @return \Illuminate\Http\Response
-     */
+        $repertorio = RepertorioShow::create($validated);
+
+        return response()->json($repertorio, 201);
+    }
     public function show(RepertorioShow $repertorioShow)
     {
-        //
+        return response()->json(
+            $repertorioShow->load([
+                'show',
+                'musica',
+                'pedidos'
+            ]),
+            200
+        );
     }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\RepertorioShow  $repertorioShow
-     * @return \Illuminate\Http\Response
-     */
     public function edit(RepertorioShow $repertorioShow)
     {
         //
     }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\RepertorioShow  $repertorioShow
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, RepertorioShow $repertorioShow)
     {
-        //
-    }
+        $validated = $request->validate([
+            'valor_minimo' => 'sometimes|numeric|min:0',
+            'esta_disponivel' => 'sometimes|boolean',
+            'ordem' => 'nullable|integer|min:0',
+        ]);
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\RepertorioShow  $repertorioShow
-     * @return \Illuminate\Http\Response
-     */
+        $repertorioShow->update($validated);
+
+        return response()->json($repertorioShow, 200);
+    }
     public function destroy(RepertorioShow $repertorioShow)
     {
-        //
+        $repertorioShow->delete();
+
+        return response()->json([
+            'message' => 'Item removido do repertório com sucesso.'
+        ], 200);
+    }
+    public function porShow($showId)
+    {
+        $repertorio = RepertorioShow::where('show_id', $showId)
+            ->with('musica')
+            ->orderBy('ordem')
+            ->get();
+
+        return response()->json($repertorio);
     }
 }

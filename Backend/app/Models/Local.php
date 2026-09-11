@@ -8,4 +8,27 @@ use Illuminate\Database\Eloquent\Model;
 class Local extends Model
 {
     use HasFactory;
+
+    protected $table = 'locais';
+
+    protected $fillable = [
+        'nome',
+        'endereco',
+        'complemento',
+        'bairro',
+        'cidade',
+        'estado',
+        'cep',
+        'latitude',
+        'longitude',
+    ];
+
+    protected $casts = [
+        'latitude' => 'decimal:7',
+        'longitude' => 'decimal:7',
+    ];
+    public function shows()
+    {
+        return $this->hasMany(Show::class);
+    }
 }

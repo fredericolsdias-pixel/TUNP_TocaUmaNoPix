@@ -7,79 +7,73 @@ use Illuminate\Http\Request;
 
 class PedidoController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function index()
     {
-        //
+        return response()->json(
+            Pedido::with([
+                'show',
+                'repertorioShow',
+                'pagamentoPix'
+            ])->get(),
+            200
+        );
     }
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function create()
     {
         //
     }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
-        //
-    }
+        $validated = $request->validate([
+            'show_id' => 'required|exists:shows,id',
+            'repertorio_show_id' => 'required|exists:repertorios_show,id',
+            'nome_cliente' => 'required|string|max:255',
+            'identificador_mesa' => 'nullable|string|max:255',
+            'mensagem' => 'nullable|string|max:500',
+            'valor_gorjeta' => 'required|numeric|min:0',
+            'status' => 'required|string',
+        ]);
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\Pedido  $pedido
-     * @return \Illuminate\Http\Response
-     */
+        $pedido = Pedido::create($validated);
+
+        return response()->json($pedido, 201);
+    }
     public function show(Pedido $pedido)
     {
-        //
+        return response()->json(
+            $pedido->load([
+                'show',
+                'repertorioShow',
+                'pagamentoPix'
+            ]),
+            200
+        );
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Pedido  $pedido
-     * @return \Illuminate\Http\Response
-     */
     public function edit(Pedido $pedido)
     {
         //
     }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Pedido  $pedido
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, Pedido $pedido)
     {
-        //
-    }
+        $validated = $request->validate([
+            'nome_cliente' => 'sometimes|string|max:255',
+            'identificador_mesa' => 'nullable|string|max:255',
+            'mensagem' => 'nullable|string|max:500',
+            'valor_gorjeta' => 'sometimes|numeric|min:0',
+            'status' => 'sometimes|string',
+        ]);
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\Pedido  $pedido
-     * @return \Illuminate\Http\Response
-     */
+        $pedido->update($validated);
+
+        return response()->json($pedido, 200);
+    }
     public function destroy(Pedido $pedido)
     {
-        //
+        $pedido->delete();
+
+        return response()->json([
+            'message' => 'Pedido removido com sucesso.'
+        ], 200);
     }
 }
