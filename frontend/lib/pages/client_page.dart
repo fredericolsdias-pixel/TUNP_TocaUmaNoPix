@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../screens/request_page.dart';
 import '../screens/queue_page.dart';
+import '../screens/painel_cantor_page.dart';
+import '../screens/login_cantor_page.dart';
 
 class ClientPage extends StatefulWidget {
   const ClientPage({super.key});
@@ -864,6 +866,23 @@ class _ClientPageState extends State<ClientPage> {
                     color: Colors.white,
                     fontSize: 9,
                     fontWeight: FontWeight.bold,
+
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const LoginCantorPage()),
+                  );
+                },
+                onPressed: () {},
+
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFC9922B),
+
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 18,
                   ),
                 ),
               ),
