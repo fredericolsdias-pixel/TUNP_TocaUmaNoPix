@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../screens/request_page.dart';
 import '../screens/queue_page.dart';
+import '../screens/painel_cantor_page.dart';
+import '../screens/login_cantor_page.dart';
 
 class ClientPage extends StatelessWidget {
   const ClientPage({super.key});
@@ -178,6 +180,13 @@ class ClientPage extends StatelessWidget {
               ),
 
               ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const LoginCantorPage()),
+                  );
+                },
                 onPressed: () {},
 
                 style: ElevatedButton.styleFrom(

@@ -7,79 +7,110 @@ use Illuminate\Http\Request;
 
 class ShowController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function index()
     {
-        //
+        return response()->json(
+            Show::with([
+                'musico',
+                'local'
+            ])->get(),
+            200
+        );
     }
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function create()
     {
         //
     }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
-        //
-    }
+        $validated = $request->validate([
+            'musico_id' => 'required|exists:musicos,id',
+            'local_id' => 'nullable|exists:locais,id',
+            'nome' => 'required|string|max:255',
+            'nome_local' => 'nullable|string|max:255',
+            'endereco' => 'nullable|string|max:255',
+            'cidade' => 'nullable|string|max:100',
+            'estado' => 'nullable|string|max:2',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'status' => 'sometimes|string',
+            'visibilidade' => 'sometimes|string',
+            'iniciado_em' => 'nullable|date',
+            'encerrado_em' => 'nullable|date',
+        ]);
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\Show  $show
-     * @return \Illuminate\Http\Response
-     */
+        $show = Show::create($validated);
+
+        return response()->json($show, 201);
+    }
     public function show(Show $show)
     {
-        //
+        return response()->json(
+            $show->load([
+                'musico',
+                'local',
+                'repertorios',
+                'pedidos'
+            ]),
+            200
+        );
     }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Show  $show
-     * @return \Illuminate\Http\Response
-     */
     public function edit(Show $show)
     {
         //
     }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Show  $show
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, Show $show)
     {
-        //
-    }
+        $validated = $request->validate([
+            'nome' => 'sometimes|required|string|max:255',
+            'nome_local' => 'nullable|string|max:255',
+            'endereco' => 'nullable|string|max:255',
+            'cidade' => 'nullable|string|max:100',
+            'estado' => 'nullable|string|max:2',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'status' => 'sometimes|string',
+            'visibilidade' => 'sometimes|string',
+            'iniciado_em' => 'nullable|date',
+            'encerrado_em' => 'nullable|date',
+        ]);
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\Show  $show
-     * @return \Illuminate\Http\Response
-     */
+        $show->update($validated);
+
+        return response()->json($show, 200);
+    }
     public function destroy(Show $show)
     {
-        //
+        $show->delete();
+
+        return response()->json([
+            'message' => 'Show removido com sucesso.'
+        ], 200);
+    }
+    public function porMusico($musicoId)
+    {
+        $shows = Show::where('musico_id', $musicoId)
+            ->with('local')
+            ->get();
+
+        return response()->json($shows);
+    }
+    public function iniciar(Show $show)
+    {
+        $show->update([
+            'status' => 'EM_ANDAMENTO',
+            'iniciado_em' => now(),
+        ]);
+
+        return response()->json($show);
+    }
+    public function encerrar(Show $show)
+    {
+        $show->update([
+            'status' => 'ENCERRADO',
+            'encerrado_em' => now(),
+        ]);
+
+        return response()->json($show);
     }
 }
