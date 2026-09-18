@@ -187,6 +187,7 @@ class ClientPage extends StatelessWidget {
                       builder: (context) => const LoginCantorPage()),
                   );
                 },
+                onPressed: () {},
 
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFC9922B),
