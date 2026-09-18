@@ -24,11 +24,8 @@ class LocalController extends Controller
         $validated = $request->validate([
             'nome' => 'required|string|max:255',
             'endereco' => 'nullable|string|max:255',
-            'complemento' => 'nullable|string|max:255',
-            'bairro' => 'nullable|string|max:255',
             'cidade' => 'nullable|string|max:255',
             'estado' => 'nullable|string|max:2',
-            'cep' => 'nullable|string|max:10',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
         ]);
@@ -56,11 +53,8 @@ class LocalController extends Controller
         $validated = $request->validate([
             'nome' => 'sometimes|required|string|max:255',
             'endereco' => 'nullable|string|max:255',
-            'complemento' => 'nullable|string|max:255',
-            'bairro' => 'nullable|string|max:255',
             'cidade' => 'nullable|string|max:255',
             'estado' => 'nullable|string|max:2',
-            'cep' => 'nullable|string|max:10',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
         ]);

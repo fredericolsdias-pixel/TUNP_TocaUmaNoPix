@@ -9,16 +9,13 @@ class Local extends Model
 {
     use HasFactory;
 
-    protected $table = 'locais';
+    protected $table = 'locals';
 
     protected $fillable = [
         'nome',
         'endereco',
-        'complemento',
-        'bairro',
         'cidade',
         'estado',
-        'cep',
         'latitude',
         'longitude',
     ];

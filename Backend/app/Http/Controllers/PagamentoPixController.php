@@ -22,7 +22,7 @@ class PagamentoPixController extends Controller
     {
         $validated = $request->validate([
             'pedido_id' => 'required|exists:pedidos,id',
-            'status' => 'required|string',
+            'status' => 'sometimes|string',
             'valor' => 'required|numeric|min:0',
             'txid' => 'nullable|string|max:255',
             'qr_code_payload' => 'nullable|string',

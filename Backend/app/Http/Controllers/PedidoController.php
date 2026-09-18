@@ -26,12 +26,11 @@ class PedidoController extends Controller
     {
         $validated = $request->validate([
             'show_id' => 'required|exists:shows,id',
-            'repertorio_show_id' => 'required|exists:repertorios_show,id',
+            'repertorio_show_id' => 'required|exists:repertorio_shows,id',
             'nome_cliente' => 'required|string|max:255',
-            'identificador_mesa' => 'nullable|string|max:255',
+            'identificador_musica' => 'nullable|string|max:255',
             'mensagem' => 'nullable|string|max:500',
-            'valor_gorjeta' => 'required|numeric|min:0',
-            'status' => 'required|string',
+            'valor_gorjeta' => 'nullable|numeric|min:0',
         ]);
 
         $pedido = Pedido::create($validated);
@@ -58,7 +57,7 @@ class PedidoController extends Controller
     {
         $validated = $request->validate([
             'nome_cliente' => 'sometimes|string|max:255',
-            'identificador_mesa' => 'nullable|string|max:255',
+            'identificador_musica' => 'nullable|string|max:255',
             'mensagem' => 'nullable|string|max:500',
             'valor_gorjeta' => 'sometimes|numeric|min:0',
             'status' => 'sometimes|string',

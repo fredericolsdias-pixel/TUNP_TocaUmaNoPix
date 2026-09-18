@@ -9,7 +9,7 @@ class RepertorioShow extends Model
 {
     use HasFactory;
 
-    protected $table = 'repertorios_show';
+    protected $table = 'repertorio_shows';
 
     protected $fillable = [
         'show_id',

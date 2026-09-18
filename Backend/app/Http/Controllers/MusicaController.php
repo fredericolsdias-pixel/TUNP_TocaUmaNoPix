@@ -28,8 +28,8 @@ class MusicaController extends Controller
             'titulo' => 'required|string|max:255',
             'artista_original' => 'required|string|max:255',
             'genero' => 'nullable|string|max:100',
-            'e_autoral' => 'boolean',
-            'esta_ativa' => 'boolean',
+            'e_autoral' => 'sometimes|boolean',
+            'esta_ativa' => 'sometimes|boolean',
         ]);
 
         $musica = Musica::create($validated);
@@ -49,5 +49,30 @@ class MusicaController extends Controller
     public function edit(Musica $musica)
     {
         
+    }
+
+    public function update(Request $request, Musica $musica)
+    {
+        $validated = $request->validate([
+            'titulo' => 'sometimes|required|string|max:255',
+            'artista_original' => 'sometimes|required|string|max:255',
+            'genero' => 'nullable|string|max:100',
+            'e_autoral' => 'sometimes|boolean',
+            'esta_ativa' => 'sometimes|boolean',
+        ]);
+
+        $musica->update($validated);
+
+        return response()->json($musica, 200);
+    }
+
+    public function destroy(Musica $musica)
+    {
+        $musica->delete();
+
+        return response()->json([
+            'message' => 'Música deletada com sucesso.'
+        ], 200
+);
     }
 }

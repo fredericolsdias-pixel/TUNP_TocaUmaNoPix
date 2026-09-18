@@ -12,29 +12,28 @@ class Pedido extends Model
     protected $table = 'pedidos';
 
     protected $fillable = [
-        'musica_id',
-        'evento_id',
+        'show_id',
+        'repertorio_show_id',
         'nome_cliente',
+        'identificador_musica',
+        'mensagem',
         'valor_gorjeta',
-        'status',
-        'observacao',
-        'solicitado_em'
+        'status'
     ];
 
     protected $casts = [
         'valor_gorjeta' => 'decimal:2',
-        'solicitado_em' => 'datetime',
     ];
-    public function musica()
+    
+    public function show()
     {
-        return $this->belongsTo(Musica::class);
-    }
-
-    public function evento()
-    {
-        return $this->belongsTo(Evento::class);
-    }
-
+        return $this->belongsTo(Show::class);
+        }
+        
+        public function repertorioShow()
+        {
+            return $this->belongsTo(RepertorioShow::class);
+        }
     public function pagamentoPix()
     {
         return $this->hasOne(PagamentoPix::class);

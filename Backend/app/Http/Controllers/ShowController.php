@@ -33,8 +33,8 @@ class ShowController extends Controller
             'estado' => 'nullable|string|max:2',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
-            'status' => 'required|string',
-            'visibilidade' => 'required|string',
+            'status' => 'sometimes|string',
+            'visibilidade' => 'sometimes|string',
             'iniciado_em' => 'nullable|date',
             'encerrado_em' => 'nullable|date',
         ]);

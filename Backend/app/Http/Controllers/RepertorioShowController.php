@@ -26,8 +26,8 @@ class RepertorioShowController extends Controller
         $validated = $request->validate([
             'show_id' => 'required|exists:shows,id',
             'musica_id' => 'required|exists:musicas,id',
-            'valor_minimo' => 'required|numeric|min:0',
-            'esta_disponivel' => 'boolean',
+            'valor_minimo' => 'sometimes|numeric|min:0',
+            'esta_disponivel' => 'sometimes|boolean',
             'ordem' => 'nullable|integer|min:0',
         ]);
 
@@ -55,7 +55,7 @@ class RepertorioShowController extends Controller
         $validated = $request->validate([
             'valor_minimo' => 'sometimes|numeric|min:0',
             'esta_disponivel' => 'sometimes|boolean',
-            'ordem' => 'nullable|integer|min:0',
+            'ordem' => 'sometimes|integer|min:0',
         ]);
 
         $repertorioShow->update($validated);
