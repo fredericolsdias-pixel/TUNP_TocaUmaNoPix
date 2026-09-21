@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../services/cantor_api.dart';
+
 class EditCantorPage extends StatefulWidget {
   const EditCantorPage({super.key});
 
@@ -8,17 +10,82 @@ class EditCantorPage extends StatefulWidget {
 }
 
 class _EditCantorPageState extends State<EditCantorPage> {
-  final TextEditingController nomeController = TextEditingController();
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController chavePixController = TextEditingController();
+  final _nome = TextEditingController();
+  final _email = TextEditingController();
+  final _pix = TextEditingController();
 
-  String tipoChavePix = 'CPF';
+  String _tipoPix = 'CPF';
+  bool _carregando = true;
+  bool _salvando = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregar();
+  }
+
+  Future<void> _carregar() async {
+    try {
+      final dados = await CantorApi.meusDados();
+
+      if (!mounted) return;
+
+      setState(() {
+        _nome.text = dados['nome_artistico']?.toString() ?? '';
+        _email.text = dados['email']?.toString() ?? '';
+        _pix.text = dados['chave_pix']?.toString() ?? '';
+        _tipoPix = dados['tipo_chave_pix']?.toString() ?? 'CPF';
+        _carregando = false;
+      });
+    } catch (erro) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$erro')),
+      );
+
+      Navigator.pop(context);
+    }
+  }
+
+  Future<void> _salvar() async {
+    if (_nome.text.trim().isEmpty ||
+        _email.text.trim().isEmpty ||
+        _pix.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Preencha todos os campos.')),
+      );
+      return;
+    }
+
+    setState(() => _salvando = true);
+
+    try {
+      await CantorApi.atualizarDados({
+        'nome_artistico': _nome.text.trim(),
+        'email': _email.text.trim(),
+        'tipo_chave_pix': _tipoPix,
+        'chave_pix': _pix.text.trim(),
+      });
+
+      if (!mounted) return;
+      Navigator.pop(context);
+    } catch (erro) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$erro'.replaceFirst('Exception: ', ''))),
+      );
+    } finally {
+      if (mounted) setState(() => _salvando = false);
+    }
+  }
 
   @override
   void dispose() {
-    nomeController.dispose();
-    emailController.dispose();
-    chavePixController.dispose();
+    _nome.dispose();
+    _email.dispose();
+    _pix.dispose();
     super.dispose();
   }
 
@@ -26,258 +93,80 @@ class _EditCantorPageState extends State<EditCantorPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF08061A),
-
       appBar: AppBar(
+        title: const Text('Editar dados'),
         backgroundColor: const Color(0xFF08061A),
-        elevation: 0,
-        title: const Text(
-          'Editar Dados',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
       ),
-
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-
-            const Center(
-              child: Icon(
-                Icons.person,
-                color: Color(0xFF7C3AED),
-                size: 80,
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            const Center(
-              child: Text(
-                'Dados do Cantor',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
+      body: _carregando
+          ? const Center(child: CircularProgressIndicator())
+          : Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 560),
+                child: ListView(
+                  padding: const EdgeInsets.all(24),
+                  children: [
+                    TextField(
+                      controller: _nome,
+                      decoration: const InputDecoration(
+                        labelText: 'Nome artístico',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _email,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(
+                        labelText: 'E-mail',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: _tipoPix,
+                      decoration: const InputDecoration(
+                        labelText: 'Tipo de chave Pix',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'CPF', child: Text('CPF')),
+                        DropdownMenuItem(value: 'CNPJ', child: Text('CNPJ')),
+                        DropdownMenuItem(value: 'EMAIL', child: Text('E-mail')),
+                        DropdownMenuItem(
+                          value: 'TELEFONE',
+                          child: Text('Telefone'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'ALEATORIA',
+                          child: Text('Aleatória'),
+                        ),
+                      ],
+                      onChanged: (valor) {
+                        if (valor != null) {
+                          setState(() => _tipoPix = valor);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _pix,
+                      decoration: const InputDecoration(
+                        labelText: 'Chave Pix',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    FilledButton.icon(
+                      onPressed: _salvando ? null : _salvar,
+                      icon: const Icon(Icons.save),
+                      label: Text(
+                        _salvando ? 'Salvando...' : 'Salvar alterações',
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-
-            const SizedBox(height: 35),
-
-            // NOME ARTÍSTICO
-
-            const Text(
-              'Nome artístico',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            TextField(
-              controller: nomeController,
-              style: const TextStyle(
-                color: Colors.white,
-              ),
-              decoration: _inputDecoration(
-                'Digite seu nome artístico',
-                Icons.person,
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // EMAIL
-
-            const Text(
-              'E-mail',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            TextField(
-              controller: emailController,
-              keyboardType: TextInputType.emailAddress,
-              style: const TextStyle(
-                color: Colors.white,
-              ),
-              decoration: _inputDecoration(
-                'Digite seu e-mail',
-                Icons.email,
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // TIPO PIX
-
-            const Text(
-              'Tipo de chave PIX',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            DropdownButtonFormField<String>(
-              value: tipoChavePix,
-
-              dropdownColor: const Color(0xFF161229),
-
-              style: const TextStyle(
-                color: Colors.white,
-              ),
-
-              decoration: _inputDecoration(
-                'Selecione o tipo',
-                Icons.pix,
-              ),
-
-              items: const [
-                DropdownMenuItem(
-                  value: 'CPF',
-                  child: Text('CPF'),
-                ),
-                DropdownMenuItem(
-                  value: 'CNPJ',
-                  child: Text('CNPJ'),
-                ),
-                DropdownMenuItem(
-                  value: 'EMAIL',
-                  child: Text('E-mail'),
-                ),
-                DropdownMenuItem(
-                  value: 'TELEFONE',
-                  child: Text('Telefone'),
-                ),
-                DropdownMenuItem(
-                  value: 'ALEATORIA',
-                  child: Text('Chave aleatória'),
-                ),
-              ],
-
-              onChanged: (valor) {
-                setState(() {
-                  tipoChavePix = valor!;
-                });
-              },
-            ),
-
-            const SizedBox(height: 20),
-
-            // CHAVE PIX
-
-            const Text(
-              'Chave PIX',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            TextField(
-              controller: chavePixController,
-              style: const TextStyle(
-                color: Colors.white,
-              ),
-              decoration: _inputDecoration(
-                'Digite sua chave PIX',
-                Icons.pix,
-              ),
-            ),
-
-            const SizedBox(height: 35),
-
-            // SALVAR
-
-            SizedBox(
-              width: double.infinity,
-
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  // Aqui vamos conectar com o Laravel.
-                },
-
-                icon: const Icon(Icons.save),
-
-                label: const Text(
-                  'Salvar alterações',
-                  style: TextStyle(
-                    fontSize: 16,
-                  ),
-                ),
-
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF7C3AED),
-                  foregroundColor: Colors.white,
-
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 18,
-                  ),
-
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static InputDecoration _inputDecoration(
-    String hint,
-    IconData icon,
-  ) {
-    return InputDecoration(
-      hintText: hint,
-
-      hintStyle: const TextStyle(
-        color: Colors.white54,
-      ),
-
-      prefixIcon: Icon(
-        icon,
-        color: const Color(0xFF7C3AED),
-      ),
-
-      filled: true,
-
-      fillColor: const Color(0xFF161229),
-
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: BorderSide.none,
-      ),
-
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(
-          color: Color(0xFF7C3AED),
-        ),
-      ),
     );
   }
 }

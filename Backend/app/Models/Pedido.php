@@ -16,6 +16,7 @@ class Pedido extends Model
         'repertorio_show_id',
         'nome_cliente',
         'identificador_musica',
+        'identificador_mesa',
         'mensagem',
         'valor_gorjeta',
         'status'

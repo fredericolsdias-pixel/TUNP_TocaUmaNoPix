@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
+import 'dart:convert';
 
-import '../pedidos.dart';
-import '../theme/app_theme.dart';
-import '../widgets/public_layout.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class QueuePage extends StatefulWidget {
   const QueuePage({super.key});
@@ -12,188 +12,182 @@ class QueuePage extends StatefulWidget {
 }
 
 class _QueuePageState extends State<QueuePage> {
+  static const _base = 'http://127.0.0.1:8000/api/publico';
+
+  Timer? _atualizador;
+  Map<String, dynamic>? _fila;
+  String? _erro;
+  bool _buscando = false;
+
   @override
-  Widget build(BuildContext context) {
-    return PublicLayout(
-      currentRoute: AppRoutes.fila,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'FILA DO SHOW',
-            style: TextStyle(
-              color: AppColors.gold,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.5,
-            ),
-          ),
+  void initState() {
+    super.initState();
+    _atualizar();
 
-          const SizedBox(height: 8),
+    _atualizador = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) => _atualizar(),
+    );
+  }
 
-          const Text(
-            'Fila e ao vivo agora',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 30,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+  @override
+  void dispose() {
+    _atualizador?.cancel();
+    super.dispose();
+  }
 
-          const SizedBox(height: 24),
+  Future<dynamic> _buscar(String caminho) async {
+    final resposta = await http.get(
+      Uri.parse('$_base$caminho'),
+      headers: {'Accept': 'application/json'},
+    );
 
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceSoft,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.graphic_eq,
-                      color: AppColors.gold,
-                    ),
-                    SizedBox(width: 10),
-                    Text(
-                      'Ao vivo agora',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+    final json = jsonDecode(utf8.decode(resposta.bodyBytes));
+
+    if (resposta.statusCode < 200 || resposta.statusCode >= 300) {
+      throw Exception(
+        json is Map
+            ? json['message'] ?? 'Erro ao atualizar a fila.'
+            : 'Erro ao atualizar a fila.',
+      );
+    }
+
+    return json;
+  }
+
+  Future<void> _atualizar() async {
+    if (_buscando) return;
+
+    _buscando = true;
+
+    try {
+      final respostaShows = await _buscar('/shows');
+      final shows = respostaShows['data'] as List;
+
+      if (shows.isEmpty) {
+        if (!mounted) return;
+
+        setState(() {
+          _fila = {'ao_vivo': null, 'fila': []};
+          _erro = null;
+        });
+        return;
+      }
+
+      final showId = (shows.first as Map)['id'];
+      final dados = await _buscar('/shows/$showId/fila');
+
+      if (!mounted) return;
+
+      setState(() {
+        _fila = Map<String, dynamic>.from(dados as Map);
+        _erro = null;
+      });
+    } catch (erro) {
+      if (!mounted) return;
+
+      setState(() {
+        _erro = '$erro'.replaceFirst('Exception: ', '');
+      });
+    } finally {
+      _buscando = false;
+    }
+  }
+
+  Widget _musica(Map<String, dynamic> pedido, {int? posicao}) {
+    final status = pedido['status']?.toString() ?? 'PENDENTE';
+    final valor = pedido['valor_gorjeta']?.toString() ?? '0.00';
+
+    return Card(
+      color: const Color(0xFF161229),
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: const Color(0xFF7C3AED),
+          child: posicao == null
+              ? const Icon(Icons.graphic_eq, color: Colors.white)
+              : Text(
+                  '$posicao',
+                  style: const TextStyle(color: Colors.white),
                 ),
-                SizedBox(height: 12),
-                Text(
-                  'Nenhuma música foi marcada como tocando no momento.',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 30),
-
-          Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'Próximos pedidos',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              IconButton(
-                tooltip: 'Atualizar fila',
-                onPressed: () => setState(() {}),
-                icon: const Icon(Icons.refresh),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 14),
-
-          if (filaPedidos.isEmpty)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(25),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: const Text(
-                'Ainda não há pedidos na fila.',
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            )
-          else
-            for (var index = 0; index < filaPedidos.length; index++)
-              _pedidoCard(index),
-
-          const SizedBox(height: 25),
-
-          OutlinedButton.icon(
-            onPressed: () {
-              Navigator.pushNamed(context, AppRoutes.cardapio);
-            },
-            icon: const Icon(Icons.library_music_outlined),
-            label: const Text('Ver cardápio'),
-          ),
-        ],
+        ),
+        title: Text(pedido['musica']?.toString() ?? 'Música'),
+        subtitle: Text(
+          '${pedido['nome_cliente'] ?? 'Cliente'}'
+          ' • ${status == 'ACEITO' ? 'Aceito' : status == 'TOCANDO' ? 'Tocando' : 'Pendente'}'
+          '\nGorjeta informada: R\$ ${valor.replaceAll('.', ',')}',
+        ),
+        isThreeLine: true,
       ),
     );
   }
 
-  Widget _pedidoCard(int index) {
-    final pedido = filaPedidos[index];
+  @override
+  Widget build(BuildContext context) {
+    final aoVivo = _fila?['ao_vivo'];
+    final pedidos = _fila?['fila'] as List? ?? [];
 
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(17),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: AppColors.primary,
-            child: Text(
-              '${index + 1}',
-              style: const TextStyle(color: Colors.white),
-            ),
-          ),
-
-          const SizedBox(width: 15),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  pedido.musica,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  'Pedido por ${pedido.nome}',
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  'Gorjeta selecionada: R\$ ${pedido.gorjeta}',
-                  style: const TextStyle(
-                    color: AppColors.gold,
-                  ),
-                ),
-              ],
-            ),
+    return Scaffold(
+      backgroundColor: const Color(0xFF08061A),
+      appBar: AppBar(
+        title: const Text('Fila e ao vivo agora'),
+        backgroundColor: const Color(0xFF08061A),
+        actions: [
+          IconButton(
+            tooltip: 'Atualizar agora',
+            onPressed: _atualizar,
+            icon: const Icon(Icons.refresh),
           ),
         ],
       ),
+      body: _fila == null && _erro == null
+          ? const Center(child: CircularProgressIndicator())
+          : _fila == null
+              ? Center(child: Text(_erro!))
+              : Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 760),
+                    child: ListView(
+                      padding: const EdgeInsets.all(20),
+                      children: [
+                        if (_erro != null)
+                          Text(
+                            'Atualização indisponível: $_erro',
+                            style: const TextStyle(color: Colors.orangeAccent),
+                          ),
+                        const Text(
+                          'Ao vivo agora',
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        aoVivo == null
+                            ? const Text('Nenhuma música tocando agora.')
+                            : _musica(
+                                Map<String, dynamic>.from(aoVivo as Map),
+                              ),
+                        const SizedBox(height: 30),
+                        Text(
+                          'Próximos pedidos (${pedidos.length})',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        if (pedidos.isEmpty)
+                          const Text('A fila está vazia.'),
+                        for (var i = 0; i < pedidos.length; i++)
+                          _musica(
+                            Map<String, dynamic>.from(pedidos[i] as Map),
+                            posicao: i + 1,
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
     );
   }
 }

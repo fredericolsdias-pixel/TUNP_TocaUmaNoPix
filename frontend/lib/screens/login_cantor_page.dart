@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../services/cantor_api.dart';
 import 'painel_cantor_page.dart';
 
 class LoginCantorPage extends StatefulWidget {
@@ -9,42 +11,46 @@ class LoginCantorPage extends StatefulWidget {
 }
 
 class _LoginCantorPageState extends State<LoginCantorPage> {
-  final TextEditingController usuarioController =
-      TextEditingController();
-
-  final TextEditingController senhaController =
-      TextEditingController();
-
-  bool esconderSenha = true;
+  final _email = TextEditingController();
+  final _senha = TextEditingController();
+  bool _enviando = false;
 
   @override
   void dispose() {
-    usuarioController.dispose();
-    senhaController.dispose();
+    _email.dispose();
+    _senha.dispose();
     super.dispose();
   }
 
-  void _entrar() {
-    final usuario = usuarioController.text.trim();
-    final senha = senhaController.text;
+  Future<void> _entrar() async {
+    if (_email.text.trim().isEmpty || _senha.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Informe e-mail e senha.')),
+      );
+      return;
+    }
 
-    // TEMPORÁRIO
-    // Depois substituiremos pela autenticação do Laravel.
-    if (usuario == 'cantor' && senha == '1234') {
+    setState(() => _enviando = true);
+
+    try {
+      await CantorApi.entrar(_email.text.trim(), _senha.text);
+
+      if (!mounted) return;
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => const PainelCantorPage(),
+          builder: (_) => const PainelCantorPage(),
         ),
       );
-    } else {
+    } catch (erro) {
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Usuário ou senha incorretos.',
-          ),
-        ),
+        SnackBar(content: Text('$erro'.replaceFirst('Exception: ', ''))),
       );
+    } finally {
+      if (mounted) setState(() => _enviando = false);
     }
   }
 
@@ -52,202 +58,72 @@ class _LoginCantorPageState extends State<LoginCantorPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF08061A),
-
       appBar: AppBar(
+        title: const Text('Acesso do cantor'),
         backgroundColor: const Color(0xFF08061A),
-        elevation: 0,
-        title: const Text(
-          'Acesso do Cantor',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
       ),
-
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-
-        child: Column(
-          children: [
-
-            const SizedBox(height: 30),
-
-            // ÍCONE
-
-            const Icon(
-              Icons.mic,
-              color: Color(0xFF7C3AED),
-              size: 90,
-            ),
-
-            const SizedBox(height: 20),
-
-            const Text(
-              'Painel do Cantor',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 30,
-                fontWeight: FontWeight.bold,
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 460),
+          child: ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.all(24),
+            children: [
+              const Icon(
+                Icons.mic,
+                size: 72,
+                color: Color(0xFF7C3AED),
               ),
-            ),
-
-            const SizedBox(height: 10),
-
-            const Text(
-              'Entre com suas credenciais para acessar o painel.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 16,
-              ),
-            ),
-
-            const SizedBox(height: 40),
-
-            // USUÁRIO
-
-            TextField(
-              controller: usuarioController,
-
-              style: const TextStyle(
-                color: Colors.white,
-              ),
-
-              decoration: InputDecoration(
-                hintText: 'Usuário',
-
-                hintStyle: const TextStyle(
-                  color: Colors.white54,
-                ),
-
-                prefixIcon: const Icon(
-                  Icons.person,
-                  color: Color(0xFF7C3AED),
-                ),
-
-                filled: true,
-
-                fillColor: const Color(0xFF161229),
-
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(18),
-                  borderSide: BorderSide.none,
-                ),
-
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(18),
-                  borderSide: const BorderSide(
-                    color: Color(0xFF7C3AED),
-                  ),
+              const SizedBox(height: 20),
+              const Text(
+                'Seu show em suas mãos',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // SENHA
-
-            TextField(
-              controller: senhaController,
-
-              obscureText: esconderSenha,
-
-              style: const TextStyle(
-                color: Colors.white,
+              const SizedBox(height: 8),
+              const Text(
+                'Entre para organizar seu repertório e seus dados.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white70),
               ),
-
-              decoration: InputDecoration(
-                hintText: 'Senha',
-
-                hintStyle: const TextStyle(
-                  color: Colors.white54,
-                ),
-
-                prefixIcon: const Icon(
-                  Icons.lock,
-                  color: Color(0xFF7C3AED),
-                ),
-
-                suffixIcon: IconButton(
-                  onPressed: () {
-                    setState(() {
-                      esconderSenha = !esconderSenha;
-                    });
-                  },
-
-                  icon: Icon(
-                    esconderSenha
-                        ? Icons.visibility
-                        : Icons.visibility_off,
-
-                    color: Colors.white70,
-                  ),
-                ),
-
-                filled: true,
-
-                fillColor: const Color(0xFF161229),
-
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(18),
-                  borderSide: BorderSide.none,
-                ),
-
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(18),
-                  borderSide: const BorderSide(
-                    color: Color(0xFF7C3AED),
-                  ),
+              const SizedBox(height: 32),
+              TextField(
+                controller: _email,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'E-mail',
+                  prefixIcon: Icon(Icons.email_outlined),
+                  border: OutlineInputBorder(),
                 ),
               ),
-            ),
-
-            const SizedBox(height: 30),
-
-            // BOTÃO ENTRAR
-
-            SizedBox(
-              width: double.infinity,
-
-              child: ElevatedButton.icon(
-                onPressed: _entrar,
-
-                icon: const Icon(
-                  Icons.login,
-                ),
-
-                label: const Text(
-                  'Entrar',
-                  style: TextStyle(
-                    fontSize: 16,
-                  ),
-                ),
-
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF7C3AED),
-                  foregroundColor: Colors.white,
-
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 18,
-                  ),
-
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
-                  ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _senha,
+                obscureText: true,
+                onSubmitted: (_) => _entrar(),
+                decoration: const InputDecoration(
+                  labelText: 'Senha',
+                  prefixIcon: Icon(Icons.lock_outline),
+                  border: OutlineInputBorder(),
                 ),
               ),
-            ),
-
-            const SizedBox(height: 30),
-
-            const Text(
-              'Área exclusiva do cantor',
-              style: TextStyle(
-                color: Colors.white54,
-                fontSize: 14,
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed: _enviando ? null : _entrar,
+                icon: _enviando
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.login),
+                label: const Text('Entrar no painel'),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
