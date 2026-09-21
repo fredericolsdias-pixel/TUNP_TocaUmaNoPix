@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/music_data.dart';
 import '../screens/request_page.dart';
+import '../services/tunp_api.dart';
 import '../theme/app_theme.dart';
 import '../widgets/public_layout.dart';
 
@@ -12,8 +13,20 @@ class CatalogPage extends StatefulWidget {
   State<CatalogPage> createState() => _CatalogPageState();
 }
 
+class _CatalogData {
+  final ShowInfo? show;
+  final List<MusicaItem> musicas;
+
+  const _CatalogData({
+    required this.show,
+    required this.musicas,
+  });
+}
+
 class _CatalogPageState extends State<CatalogPage> {
   String categoriaSelecionada = 'Todos';
+
+  late Future<_CatalogData> _catalogFuture;
 
   final List<String> categorias = const [
     'Todos',
@@ -24,16 +37,36 @@ class _CatalogPageState extends State<CatalogPage> {
     'Samba',
   ];
 
-  List<MusicaItem> get musicasFiltradas {
-    if (categoriaSelecionada == 'Todos') {
-      return musicasDoShow;
+  @override
+  void initState() {
+    super.initState();
+    _catalogFuture = _carregarCatalogo();
+  }
+
+  Future<_CatalogData> _carregarCatalogo() async {
+    final show = await TunpApi.instance.showAtual();
+
+    if (show == null) {
+      return const _CatalogData(
+        show: null,
+        musicas: [],
+      );
     }
 
-    return musicasDoShow
-        .where(
-          (musica) => musica.categoria == categoriaSelecionada,
-        )
-        .toList();
+    final musicas = await TunpApi.instance.repertorio(
+      show.id,
+    );
+
+    return _CatalogData(
+      show: show,
+      musicas: musicas,
+    );
+  }
+
+  void _tentarNovamente() {
+    setState(() {
+      _catalogFuture = _carregarCatalogo();
+    });
   }
 
   @override
@@ -67,7 +100,7 @@ class _CatalogPageState extends State<CatalogPage> {
           const SizedBox(height: 8),
 
           const Text(
-            'Explore o repertório e toque em “Pedir música” para fazer seu pedido.',
+            'Selecione uma música do repertório do show.',
             style: TextStyle(
               color: AppColors.textSecondary,
               fontSize: 15,
@@ -76,45 +109,131 @@ class _CatalogPageState extends State<CatalogPage> {
 
           const SizedBox(height: 24),
 
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: categorias.map((categoria) {
-              final selecionada =
-                  categoriaSelecionada == categoria;
+          FutureBuilder<_CatalogData>(
+            future: _catalogFuture,
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Não foi possível carregar o cardápio. '
+                      'Verifique se o Laravel está ligado.',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    OutlinedButton.icon(
+                      onPressed: _tentarNovamente,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Tentar novamente'),
+                    ),
+                  ],
+                );
+              }
 
-              return ChoiceChip(
-                label: Text(categoria),
-                selected: selecionada,
-                selectedColor: AppColors.primary,
-                backgroundColor: AppColors.surface,
-                labelStyle: TextStyle(
-                  color: selecionada
-                      ? Colors.white
-                      : AppColors.textSecondary,
-                ),
-                onSelected: (_) {
-                  setState(() {
-                    categoriaSelecionada = categoria;
-                  });
-                },
+              if (!snapshot.hasData) {
+                return const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: CircularProgressIndicator(),
+                );
+              }
+
+              final dados = snapshot.data!;
+
+              if (dados.show == null) {
+                return const Text(
+                  'Nenhum show público está em andamento.',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                  ),
+                );
+              }
+
+              if (dados.musicas.isEmpty) {
+                return const Text(
+                  'O repertório deste show ainda está vazio.',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                  ),
+                );
+              }
+
+              final musicasFiltradas =
+                  categoriaSelecionada == 'Todos'
+                  ? dados.musicas
+                  : dados.musicas
+                        .where(
+                          (musica) =>
+                              musica.categoria ==
+                              categoriaSelecionada,
+                        )
+                        .toList();
+
+              return Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    dados.show!.nome,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 15,
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: categorias.map((categoria) {
+                      final selecionada =
+                          categoriaSelecionada ==
+                          categoria;
+
+                      return ChoiceChip(
+                        label: Text(categoria),
+                        selected: selecionada,
+                        selectedColor: AppColors.primary,
+                        backgroundColor: AppColors.surface,
+                        labelStyle: TextStyle(
+                          color: selecionada
+                              ? Colors.white
+                              : AppColors.textSecondary,
+                        ),
+                        onSelected: (_) {
+                          setState(() {
+                            categoriaSelecionada =
+                                categoria;
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  Text(
+                    '${musicasFiltradas.length} músicas',
+                    style: const TextStyle(
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  for (final musica in musicasFiltradas)
+                    _musicCard(
+                      context,
+                      showId: dados.show!.id,
+                      musica: musica,
+                    ),
+                ],
               );
-            }).toList(),
-          ),
-
-          const SizedBox(height: 18),
-
-          Text(
-            '${musicasFiltradas.length} músicas',
-            style: const TextStyle(
-              color: AppColors.textMuted,
-            ),
-          ),
-
-          const SizedBox(height: 14),
-
-          ...musicasFiltradas.map(
-            (musica) => _musicCard(context, musica),
+            },
           ),
         ],
       ),
@@ -122,9 +241,10 @@ class _CatalogPageState extends State<CatalogPage> {
   }
 
   Widget _musicCard(
-    BuildContext context,
-    MusicaItem musica,
-  ) {
+    BuildContext context, {
+    required int showId,
+    required MusicaItem musica,
+  }) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 12),
@@ -148,12 +268,11 @@ class _CatalogPageState extends State<CatalogPage> {
                   Icons.music_note,
                   color: AppColors.primaryLight,
                 ),
-
                 const SizedBox(width: 13),
-
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
                     children: [
                       Text(
                         musica.titulo,
@@ -192,6 +311,8 @@ class _CatalogPageState extends State<CatalogPage> {
                 MaterialPageRoute(
                   builder: (_) => RequestPage(
                     musica: musica.titulo,
+                    showId: showId,
+                    repertorioId: musica.id,
                   ),
                 ),
               );

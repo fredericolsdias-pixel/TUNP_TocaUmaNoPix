@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../screens/login_cantor_page.dart';
+import '../services/tunp_api.dart';
 import '../theme/app_theme.dart';
 import 'app_header.dart';
 
@@ -13,7 +14,7 @@ class AppRoutes {
   static const fila = '/fila';
 }
 
-class PublicLayout extends StatelessWidget {
+class PublicLayout extends StatefulWidget {
   final String currentRoute;
   final Widget child;
 
@@ -22,6 +23,19 @@ class PublicLayout extends StatelessWidget {
     required this.currentRoute,
     required this.child,
   });
+
+  @override
+  State<PublicLayout> createState() => _PublicLayoutState();
+}
+
+class _PublicLayoutState extends State<PublicLayout> {
+  late final Future<ShowInfo?> _showFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _showFuture = TunpApi.instance.showAtual();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,17 +47,40 @@ class PublicLayout extends StatelessWidget {
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 1100),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 48),
+                padding: const EdgeInsets.fromLTRB(
+                  20,
+                  24,
+                  20,
+                  48,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    AppHeader(
-                      onSingerPanelPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const LoginCantorPage(),
-                          ),
+                    FutureBuilder<ShowInfo?>(
+                      future: _showFuture,
+                      builder: (context, snapshot) {
+                        String nomeArtista = 'Carregando show...';
+
+                        if (snapshot.hasError) {
+                          nomeArtista = 'Show indisponível';
+                        } else if (snapshot.connectionState ==
+                            ConnectionState.done) {
+                          nomeArtista =
+                              snapshot.data?.nomeArtista ??
+                              'Nenhum show ao vivo';
+                        }
+
+                        return AppHeader(
+                          showName: nomeArtista,
+                          onSingerPanelPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    const LoginCantorPage(),
+                              ),
+                            );
+                          },
                         );
                       },
                     ),
@@ -83,7 +120,7 @@ class PublicLayout extends StatelessWidget {
 
                     const SizedBox(height: 36),
 
-                    child,
+                    widget.child,
                   ],
                 ),
               ),
@@ -100,7 +137,7 @@ class PublicLayout extends StatelessWidget {
     required String route,
     required IconData icon,
   }) {
-    final selected = currentRoute == route;
+    final selected = widget.currentRoute == route;
 
     return TextButton.icon(
       onPressed: selected
@@ -124,7 +161,9 @@ class PublicLayout extends StatelessWidget {
         ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
-          side: const BorderSide(color: AppColors.border),
+          side: const BorderSide(
+            color: AppColors.border,
+          ),
         ),
       ),
     );

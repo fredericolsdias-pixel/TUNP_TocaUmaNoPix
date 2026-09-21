@@ -4,8 +4,15 @@ import '../pedidos.dart';
 
 class RequestPage extends StatefulWidget {
   final String musica;
+  final int showId;
+  final int repertorioId;
 
-  const RequestPage({super.key, required this.musica});
+  const RequestPage({
+    super.key,
+    required this.musica,
+    required this.showId,
+    required this.repertorioId,
+  });
 
   @override
   State<RequestPage> createState() => _RequestPageState();
